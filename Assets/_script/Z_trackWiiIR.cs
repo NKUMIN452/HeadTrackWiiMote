@@ -22,7 +22,10 @@ public class Z_trackWiiIR : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
-		Wii.DeactivateMotionPlus (0);
+		if(Wii.HasMotionPlus(0)){
+			print ("Has Motion Plus");
+			Wii.DeactivateMotionPlus (0);
+		}
 		z_dist_init = Vector3.Distance (point1.position, point2.position);
 		mult = 4.0f;
 	

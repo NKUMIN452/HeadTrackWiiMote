@@ -3,6 +3,7 @@ using System.Collections;
 
 public class Z_CamParent : MonoBehaviour {
 
+	public float mDamper = 1;
 	// Use this for initialization
 	void Start () {
 	
@@ -12,7 +13,7 @@ public class Z_CamParent : MonoBehaviour {
 	void Update () {
 	
 
-		transform.Translate (0, 0, Input.GetAxis ("Vertical"));
+		transform.Translate (Input.GetAxis("Horizontal")/mDamper, 0, Input.GetAxis ("Vertical")/mDamper);
 
 	}
 }
