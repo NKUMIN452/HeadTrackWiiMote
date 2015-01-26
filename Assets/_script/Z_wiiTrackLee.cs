@@ -31,7 +31,8 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-	
+
+		Wii.SetIRSensitivity (0, 90);
 	}
 	
 	// Update is called once per frame
@@ -52,7 +53,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 	public void TrackHead(){
 
-		Wii.SetIRSensitivity (0, 20);
+
 
 		//load points based on Raw IR Data Vector 2 Values
 		firstPoint.x = (Wii.GetRawIRData (0) [0].x) * 1016;
@@ -109,7 +110,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		//the following is from the Ogre 3D guy
 		if (FOV){//turns on FOV Projection Matrix stuff
 
-			FOV1 = (107 - .1944f * mHeadDist * mScreenHeightInMM/10);
+			FOV1 = (107 - .1944f * mHeadDist * mScreenHeightInMM/10) * 1.5f;
 
 			float designedScreenWidth = mScreenWidthInMM; // I built my UI based on a 640px wide screen
 			float distanceToUI = mHeadDist; // My UI elements are 500 units from the perspective camera
