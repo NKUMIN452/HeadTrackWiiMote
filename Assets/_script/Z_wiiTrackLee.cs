@@ -27,6 +27,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 	public Camera HeadCam;
 	public float FOV1;
+	public float FOVMult=1;
 	public Transform lookAtObject;
 
 	// Use this for initialization
@@ -110,7 +111,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		//the following is from the Ogre 3D guy
 		if (FOV){//turns on FOV Projection Matrix stuff
 
-			FOV1 = (107 - .1944f * mHeadDist * mScreenHeightInMM/10) * 1.5f;
+			FOV1 = (107 - .1944f * mHeadDist * mScreenHeightInMM/10) * FOVMult;
 
 			float designedScreenWidth = mScreenWidthInMM; // I built my UI based on a 640px wide screen
 			float distanceToUI = mHeadDist; // My UI elements are 500 units from the perspective camera
