@@ -4,8 +4,7 @@ using System.Collections;
 public class Z_wiiTrackLee : MonoBehaviour {
 
 	bool mUseWiiMotes = true;                        // to disable wiiMote support
-	public bool lookatswitch = true;
-	public bool FOV = false;
+
 	public Vector3 mHeadPosition = new Vector3(0,0,0);           // position of the users head when the last frame was rendered
 	public float mHeadX = 0;                            // last calculated X position of the users head
 	public float mHeadY = 0;                            // last calculated Y position of the users head
@@ -19,16 +18,25 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public float mWiiMoteVerticleAngle = 0;                    // vertical angle of your WiiMote (as radian) pointed straight forward for me.
 
 	//vectors from the wii IR lights
-	public GameObject left;
-	public GameObject right;
+	public GameObject leftIR;
+	public GameObject rightIR;
 	public Vector2 firstPoint = new Vector2();//first IR Point XY Position
 	public Vector2 secondPoint = new Vector2();//second IR Point XY Position
 	int numvisible = 0;
 
+	//Z stuff
+	public bool lookatswitch = true;
+	public bool FOV = false;
+	public bool Matrix = false;
 	public Camera HeadCam;
 	public float FOV1;
 	public float FOVMult=1;
 	public Transform lookAtObject;
+	public float left = -0.2F;
+	public float right = 0.2F;
+	public float top = 0.2F;
+	public float bottom = -0.2F;
+	public float gmult = 1.0f;
 
 	// Use this for initialization
 	void Start () {
@@ -40,12 +48,13 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	void LateUpdate () {
 
 
-		left.transform.position = new Vector3 (firstPoint.x/1016, firstPoint.y/760, 0);
-		right.transform.position = new Vector3 (secondPoint.x/1016, secondPoint.y/760, 0);
+		leftIR.transform.position = new Vector3 (firstPoint.x/1016, firstPoint.y/760, 0);
+		rightIR.transform.position = new Vector3 (secondPoint.x/1016, secondPoint.y/760, 0);
 
 		TrackHead ();
-		if (!Wii.IsActive(0)){
-			print ("Lost Connection To WiiMote!!!");
+		if(Matrix){//only do this if the user chooses, for experimenting with getting the perspective correct
+			Matrix4x4 m = PerspectiveOffCenter (left,right,top,bottom,HeadCam.nearClipPlane,HeadCam.farClipPlane);
+			HeadCam.projectionMatrix = m;
 		}
 
 	
@@ -86,10 +95,10 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		}
 
 		//now apply that crap to the camera transforms
-		Vector3 newHeadPosition = new Vector3 (mHeadX, mHeadY, -mHeadDist);
+		Vector3 newHeadPosition = new Vector3 (mHeadX*gmult, mHeadY*gmult, -mHeadDist*gmult);
 		HeadCam.transform.localPosition = newHeadPosition;
 		Vector3 lookAt = new Vector3(mHeadX/1.1f , mHeadY/1.1f , 0);//lookat point, currently being fakes
-		lookAtObject.localPosition = new Vector3 (mHeadX / 1.1f, mHeadY / 1.1f, 0);
+		lookAtObject.localPosition = new Vector3 (mHeadX*gmult / 1.1f, mHeadY*gmult / 1.1f, 0);
 
 
 		if (lookatswitch){//makes head cam look at lookat point when switched on
@@ -122,6 +131,31 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		}
 
 	}
+
+	static Matrix4x4 PerspectiveOffCenter(
+		float left, float right,
+		float bottom, float top,
+		float near, float far )
+	{    
+		//unity's projection matrix
+		float x =  (2.0f * near) / (right - left);
+		float y =  (2.0f * near) / (top - bottom);
+		float a =  (right + left) / (right - left);
+		float b =  (top + bottom) / (top - bottom);
+		float c = -(far + near) / (far - near);
+		float d = -(2.0f * far * near) / (far - near);
+		float e = -1.0f;
+		
+		Matrix4x4 m = new Matrix4x4 ();
+		m[0,0] = x;  m[0,1] = 0;  m[0,2] = a;  m[0,3] = 0;
+		m[1,0] = 0;  m[1,1] = y;  m[1,2] = b;  m[1,3] = 0;
+		m[2,0] = 0;  m[2,1] = 0;  m[2,2] = c;  m[2,3] = d;
+		m[3,0] = 0;  m[3,1] = 0;  m[3,2] = e;  m[3,3] = 0;
+		
+		return m;
+		
+	}
+
 
 }
 
@@ -159,26 +193,4 @@ public class Z_wiiTrackLee : MonoBehaviour {
 //	
 //}
 //
-//static function PerspectiveOffCenter(
-//	left : float, right : float,
-//	bottom : float, top : float,
-//	near : float, far : float ) : Matrix4x4
-//{    
-//	//unity's projection matrix
-//	var x : float =  (2.0 * near) / (right - left);
-//	var y : float =  (2.0 * near) / (top - bottom);
-//	var a : float =  (right + left) / (right - left);
-//	var b : float =  (top + bottom) / (top - bottom);
-//	var c : float = -(far + near) / (far - near);
-//	var d : float = -(2.0 * far * near) / (far - near);
-//	var e : float = -1.0;
-//	
-//	var m : Matrix4x4;
-//	m[0,0] = x;  m[0,1] = 0;  m[0,2] = a;  m[0,3] = 0;
-//	m[1,0] = 0;  m[1,1] = y;  m[1,2] = b;  m[1,3] = 0;
-//	m[2,0] = 0;  m[2,1] = 0;  m[2,2] = c;  m[2,3] = d;
-//	m[3,0] = 0;  m[3,1] = 0;  m[3,2] = e;  m[3,3] = 0;
-//	
-//	return m;
-//	
-//}
+
