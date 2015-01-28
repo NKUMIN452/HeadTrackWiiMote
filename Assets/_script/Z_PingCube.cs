@@ -10,6 +10,8 @@ public class Z_PingCube : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+
+		this.renderer.material.color = Z_headHit.hitColor;
 	
 	}
 
@@ -17,7 +19,7 @@ public class Z_PingCube : MonoBehaviour {
 
 		if(rigidbody){
 			Vector3 knockPoint = new Vector3(this.transform.position.x, this.transform.position.y, this.transform.position.z - 1);
-			this.rigidbody.AddExplosionForce (200, knockPoint, 12);
+			this.rigidbody.AddExplosionForce (2000, knockPoint, 12);
 		}
 
 	}

@@ -25,6 +25,9 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	int numvisible = 0;
 
 	//Z stuff
+	public int pixel_width = 1680;
+	public int pixel_height = 1050;
+	private float screenAspect;
 	public bool lookatswitch = true;
 	public bool FOV = false;
 	public bool Matrix = false;
@@ -36,12 +39,15 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public float right = 0.2F;
 	public float top = 0.2F;
 	public float bottom = -0.2F;
+	public float near = .05f;
+	public float far = 100;
 	public float gmult = 1.0f;
 
 	// Use this for initialization
 	void Start () {
 
 		Wii.SetIRSensitivity (0, 90);
+		screenAspect = pixel_width / pixel_height;
 	}
 	
 	// Update is called once per frame
@@ -53,7 +59,13 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 		TrackHead ();
 		if(Matrix){//only do this if the user chooses, for experimenting with getting the perspective correct
-			Matrix4x4 m = PerspectiveOffCenter (left,right,top,bottom,HeadCam.nearClipPlane,HeadCam.farClipPlane);
+			Matrix4x4 m = PerspectiveOffCenter (near*(-.5f * screenAspect + mHeadX)/mHeadDist,//left
+			                                    near*(.5f * screenAspect + mHeadX)/mHeadDist,//right
+			                                    near*(-.5f + mHeadY)/mHeadDist,//bottom
+			                                    near*(.5f + mHeadY)/mHeadDist,//top
+			                                    near,//near
+			                                    far//far
+			                                    );
 			HeadCam.projectionMatrix = m;
 		}
 
@@ -97,7 +109,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		//now apply that crap to the camera transforms
 		Vector3 newHeadPosition = new Vector3 (mHeadX*gmult, mHeadY*gmult, -mHeadDist*gmult);
 		HeadCam.transform.localPosition = newHeadPosition;
-		Vector3 lookAt = new Vector3(mHeadX/1.1f , mHeadY/1.1f , 0);//lookat point, currently being fakes
+		Vector3 lookAt = new Vector3(mHeadX/1.1f , mHeadY/1.1f , 0);//lookat point, currently being fakes      
 		lookAtObject.localPosition = new Vector3 (mHeadX*gmult / 1.1f, mHeadY*gmult / 1.1f, 0);
 
 
@@ -109,11 +121,12 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		/*float nearPlane = .05f;
 		device.Transform.Projection = Matrix.PerspectiveOffCenterLH(
 			
-			nearPlane*(-.5f * screenAspect + headX)/headDist,//m0 
-			nearPlane*(.5f * screenAspect + headX)/headDist,//m1 
-			nearPlane*(-.5f - headY)/headDist,//m2 
-			nearPlane*(.5f - headY)/headDist,//m3 
-			nearPlane, 100//m4
+			nearPlane*(-.5f * screenAspect + headX)/headDist,//left 
+			nearPlane*(.5f * screenAspect + headX)/headDist,//right 
+			nearPlane*(-.5f - headY)/headDist,//bottom 
+			nearPlane*(.5f - headY)/headDist,//top
+			nearPlane,//near
+			100//far
 			
 			);*/
 
