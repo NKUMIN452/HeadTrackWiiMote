@@ -22,8 +22,11 @@ public class Z_headHit : MonoBehaviour {
 
 		print ("hit head");
 		hitColor = new Color (1, 0, .2f, .5f);
+		Wii.SetRumble(1,true);
 		yield return new WaitForSeconds (.1f);
 		hitColor = new Color (.52f, .63f, .63f, .8f);
+		Wii.SetRumble (1, false);
+
 
 	}
 }
