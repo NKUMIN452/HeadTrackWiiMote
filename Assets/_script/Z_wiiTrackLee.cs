@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 public class Z_wiiTrackLee : MonoBehaviour {
@@ -36,6 +36,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public bool lookatswitch = true;
 	public bool FOV = false;
 	public bool Matrix = false;
+	public bool LookAtMatrixOn = false;
 	public Camera HeadCam;
 	public float FOV1;
 	public float FOVMult=1;
@@ -47,6 +48,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public float near = .05f;
 	public float far = 100;
 	public float gmult = 1.0f;
+	public float headdistoffset = 1;
 
 	// Use this for initialization
 	void Start () {
@@ -59,41 +61,49 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	void LateUpdate () {
 
 
-		leftIR.transform.position = new Vector3 (firstPoint.x/1016, firstPoint.y/760, 0);
-		rightIR.transform.position = new Vector3 (secondPoint.x/1016, secondPoint.y/760, 0);
+		leftIR.transform.position = new Vector3 (firstPoint.x/1024, firstPoint.y/768, 0);
+		rightIR.transform.position = new Vector3 (secondPoint.x/1024, secondPoint.y/768, 0);
 
 		TrackHead ();
 		if(Matrix){//only do this if the user chooses, for experimenting with getting the perspective correct
 
-
+			HeadCam.ResetProjectionMatrix();
 			Matrix4x4 m = PerspectiveOffCenter (
-												near*(-.5f * screenAspect + mHeadX)* mHeadDist,//left
-			                                    near*(.5f * screenAspect + mHeadX)* mHeadDist,//right
-			                                    near*(-.5f - mHeadY) * mHeadDist,//bottom
-			                                    near*(.5f - mHeadY) * mHeadDist,//top
+												near*(-.5f * screenAspect + mHeadX)/mHeadDist,//left,  
+			                                    near*(.5f * screenAspect + mHeadX)/mHeadDist,//right
+			                                    near*(-.5f - mHeadY)/mHeadDist,//bottom
+			                                    near*(.5f - mHeadY)/mHeadDist,//top
 			                                    near,//near
 			                                    100//far
 			                                    );
 
 			HeadCam.projectionMatrix = m;
-			HeadCam.projectionMatrix = HeadCam.projectionMatrix * Matrix4x4.Scale(new Vector3(1,1,1));
+			//HeadCam.projectionMatrix = HeadCam.projectionMatrix * Matrix4x4.Scale(new Vector3(1,1,1))
 		}
+		if(LookAtMatrixOn){
+
+			HeadCam.worldToCameraMatrix = LookAtMatrix(HeadCam.transform.position,lookAtObject.position,Vector3.zero);
+
+		}else{
+			HeadCam.ResetWorldToCameraMatrix();
+		}
+
 		if(CAVE){
 
-			Vector3 BottomLeftCorner = new Vector3(0 - mScreenWidthInMM/200, 0 - mScreenHeightInMM/100, -mHeadDist);
-			Vector3 BottomRightCorner = new Vector3(0 + mScreenWidthInMM/200, 0 - mScreenHeightInMM/100, -mHeadDist);
-			Vector3 TopLeftCorner = new Vector3(0 - mScreenWidthInMM/200, 0, -mHeadDist);
-			Vector3 trackerPosition = mHeadPosition;
-
+			Vector3 BottomLeftCorner = bleft.transform.position;
+			Vector3 BottomRightCorner = bright.transform.position;
+			Vector3 TopLeftCorner = topleft.transform.position;
+			Vector3 trackerPosition = new Vector3(mHeadX,mHeadY,mHeadDist);
 
 			Matrix4x4 genProjection = GeneralizedPerspectiveProjection(
 				BottomLeftCorner,//0 - screenWidth/2, currentHeight - screen Height, mHeadDist
 				BottomRightCorner,//0 + screenWidth/2, currentHeight - screen Height, mHeadDist
 				TopLeftCorner,//0-screenWidth/2, 0, mHeadDist 
 				trackerPosition,//mHeadX, mHeadY, -mHeadDist
-				.05f,
-				100
+				(float)HeadCam.nearClipPlane,//near
+				(float)HeadCam.farClipPlane//far
 				);
+
 			HeadCam.projectionMatrix = genProjection;  
 
 		}
@@ -107,10 +117,10 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 
 		//load points based on Raw IR Data Vector 2 Values
-		firstPoint.x = (Wii.GetRawIRData (0) [0].x) * 1016;
-		firstPoint.y = (Wii.GetRawIRData (0) [0].y) * 760;
-		secondPoint.x = (Wii.GetRawIRData (0) [1].x) * 1016;
-		secondPoint.y = (Wii.GetRawIRData (0) [1].y) * 760;
+		firstPoint.x = (Wii.GetRawIRData (0) [0].x) * 1024;
+		firstPoint.y = (Wii.GetRawIRData (0) [0].y) * 768;
+		secondPoint.x = (Wii.GetRawIRData (0) [1].x) * 1024;
+		secondPoint.y = (Wii.GetRawIRData (0) [1].y) * 768;
 
 
 		float dx = firstPoint.x - secondPoint.x;
@@ -119,27 +129,27 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		float angle = mRadiansPerPixel * pointDist / 2;
 
 		//stuff I really don't understand that calculates where your head is
-		mHeadDist = ((mIRDotDistanceInMM/2)/Mathf.Tan(angle))/mScreenHeightInMM;
+		mHeadDist = ((((mIRDotDistanceInMM/2)/Mathf.Tan(angle))/mScreenHeightInMM)/headdistoffset)*gmult;
 
 		float avgX = (firstPoint.x + secondPoint.x)/2.0f;
 		float avgY = (firstPoint.y + secondPoint.y)/2.0f;
 
-		mHeadX = (Mathf.Sin(mRadiansPerPixel * (avgX - 512)) * mHeadDist);
+		mHeadX = (gmult*Mathf.Sin(mRadiansPerPixel * (avgX - 512)) * mHeadDist);
 
 		float relativeVerticalAngle = (avgY - 384) * mRadiansPerPixel;
 
 		if(mWiiMoteIsAboveScreen){
-			mHeadY = .5f + Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist;
+			mHeadY = .5f + (gmult*Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
 
 		}else{
-			mHeadY = -.5f + Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist;
+			mHeadY = -.5f + (gmult*Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
 		}
 
 		//now apply that crap to the camera transforms
 		//Vector3 newHeadPosition = new Vector3 (mHeadX, mHeadY, -mHeadDist);
 		HeadCam.transform.localPosition = new Vector3 (mHeadX, mHeadY, -mHeadDist);
-		//Vector3 lookAt = new Vector3(mHeadX , mHeadY , 0);//lookat point, currently being fakes      
-		lookAtObject.localPosition = new Vector3 (0, mHeadY, 1);
+		Vector3 lookAt = new Vector3(mHeadX , mHeadY , 0);//lookat point, currently being fakes      
+		lookAtObject.localPosition = lookAt;
 
 
 		if (lookatswitch){//makes head cam look at lookat point when switched on
@@ -228,7 +238,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		
 	}
 
-	//CAVE guy stuff
+	//CAVE Kooima Formula
 	public static Matrix4x4 GeneralizedPerspectiveProjection(Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pe, float near, float far)
 
 	{
@@ -313,13 +323,46 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		return finalProjection;
 	}
 
-	//test matrix, probably doesn't work
-//	float scaleFov = (1+headPos.z/100)/(1+lastHeadPos.z/100);  //Calculate de zoom: dividing by lastHeadPos becouse the current zoom will be accumulated on de currentMatrix of the camera
-//	Matrix4 headMatrix = Matrix4( 
-//	                             scaleFov, 0, headDelta.x, headDelta.x*zNear,
-//	                             0, scaleFov, headDelta.y, headDelta.y*zNear,
-//	                             0, 0,  scaleFov,  0,
-//	                             0, 0, 0, 1 );
+	static Matrix4x4 LookAtMatrix(
+		Vector3 eye, Vector3 at,
+		Vector3 up)
+	{    
+		//unity's projection matrix original
+
+		Vector3 zaxis = at-eye;
+		Vector3 xaxis = Vector3.Cross (up, zaxis);
+		Vector3 yaxis = Vector3.Cross(zaxis,xaxis);
+
+		
+		Matrix4x4 m = new Matrix4x4 ();
+		
+
+		
+		m [0, 0] = xaxis.x;
+		m [0, 1] = xaxis.y;
+		m [0, 2] = xaxis.z;
+		m [0, 3] = -Vector3.Dot (xaxis, eye);
+
+				m [1,0] = yaxis.x;
+				m [1,1] = yaxis.y;
+				m [1, 2] = yaxis.z;
+				m [1, 3] = -Vector3.Dot (yaxis, eye);
+
+						m [2, 0] = zaxis.x;
+						m [2, 1] = zaxis.y;
+						m [2, 2] = zaxis.z;
+						m [2, 3] = -Vector3.Dot (zaxis, eye);
+
+										m[3,0] = 0;
+										m[3,1] = 0;
+										m[3,2] = 0;
+										m[3,3] = 1;
+										
+		
+		return m;
+		
+	}
+
 }
 
 
