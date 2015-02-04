@@ -15,13 +15,16 @@ public class Z_fingerTrack : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
-		saberOffset = new Vector3 (Wii.GetNunchuckAcceleration (0).x, Wii.GetNunchuckAcceleration (0).y, Wii.GetNunchuckAcceleration (0).z);
+		saberOffset = Wii.GetMotionPlus (1);
+		Wii.CalibrateMotionPlus (1);
 
 	}
 	
 	// Update is called once per frame
 	void Update () {
 
+		Wii.GetMotionPlus (1);
+		Wii.CheckForMotionPlus(1);
 		shooterOffset = new Vector3 (this.transform.position.x - .35f, this.transform.position.y, this.transform.position.z);
 		fingerTrans.localPosition = new Vector3 (Wii.GetNunchuckAnalogStick (0).x, Wii.GetNunchuckAnalogStick (0).y, fingerTrans.localPosition.z);
 		lSaber ();
@@ -41,6 +44,6 @@ public class Z_fingerTrack : MonoBehaviour {
 
 	public void lSaber(){
 
-		saber.localEulerAngles = new Vector3 ((Wii.GetNunchuckAcceleration (0).y - saberOffset.y) *mult, (Wii.GetNunchuckAcceleration (0).z - saberOffset.z) *mult,  (Wii.GetNunchuckAcceleration (0).x - saberOffset.x) *-mult);
+		saber.localEulerAngles = new Vector3 (Wii.GetMotionPlus (1).x * mult, Wii.GetMotionPlus(1).y * mult, Wii.GetMotionPlus(1).z * mult);
 	}
 }
