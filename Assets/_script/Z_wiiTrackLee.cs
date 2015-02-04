@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
+
 public class Z_wiiTrackLee : MonoBehaviour {
 
 	bool mUseWiiMotes = true;                        // to disable wiiMote support
@@ -37,7 +38,12 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public bool lookatswitch = true;
 	public bool FOV = false;
 	public bool Matrix = false;
-	public bool LookAtMatrixOn = false;
+	public bool LookAtMatrixRHOn = false;
+	public bool LookAtMatrixLHOn = false;
+
+	public enum LookAtMatrixSide {RH,LH,OFF};
+	public LookAtMatrixSide LookAtState = LookAtMatrixSide.OFF;
+
 	public Camera HeadCam;
 	public float FOV1;
 	public float FOVMult=1;
@@ -54,6 +60,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
+		LookAtState = LookAtMatrixSide.RH;
 		Wii.SetIRSensitivity (0, 90);
 		screenAspect = pixel_width / pixel_height;
 	}
@@ -66,36 +73,8 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		rightIR.transform.position = new Vector3 (secondPoint.x/1024, secondPoint.y/768, 0);
 
 		TrackHead ();
-		if(Matrix){//only do this if the user chooses, for experimenting with getting the perspective correct
 
-			HeadCam.ResetProjectionMatrix();
-			Matrix4x4 m = PerspectiveOffCenter (//original Lee values
-												near*(-.5f * screenAspect + mHeadX)/mHeadDist,//left,  
-			                                    near*(.5f * screenAspect + mHeadX)/mHeadDist,//right
-			                                    near*(-.5f - mHeadY)/mHeadDist,//bottom
-			                                    near*(.5f - mHeadY)/mHeadDist,//top
-			                                    near,//near
-			                                    100//far
 
-			                                    /*//alternate real world values
-												near*(-.5f * mScreenWidthInMM - mHeadX)/mHeadDist,//left,  
-												near*(.5f * mScreenWidthInMM - mHeadX)/mHeadDist,//right
-												near*(-.5f * mScreenHeightInMM - mHeadY)/mHeadDist,//bottom
-												near*(.5f * mScreenHeightInMM - mHeadY)/mHeadDist,//top
-												near,//near
-												100//far  */
-				);
-			
-			HeadCam.projectionMatrix = m;
-			//HeadCam.projectionMatrix = HeadCam.projectionMatrix * Matrix4x4.Scale(new Vector3(1,1,1))
-			if(LookAtMatrixOn){
-				
-				HeadCam.worldToCameraMatrix = LookAtMatrix(new Vector3(mHeadX, mHeadY, -mHeadDist),new Vector3(mHeadX, mHeadY,0),Vector3.down);
-				
-			}else{
-				HeadCam.ResetWorldToCameraMatrix();
-			}
-		}
 
 
 		if(CAVE){
@@ -142,7 +121,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		float angle = mRadiansPerPixel * pointDist / 2;
 
 		//stuff I really don't understand that calculates where your head is
-		mHeadDist = ((((mIRDotDistanceInMM/2)/Mathf.Tan(angle))/mScreenHeightInMM));
+		mHeadDist = (((((mIRDotDistanceInMM/2)/Mathf.Tan(angle))/mScreenHeightInMM)))-headdistoffset;
 
 		float avgX = (firstPoint.x + secondPoint.x)/2.0f;
 		float avgY = (firstPoint.y + secondPoint.y)/2.0f;
@@ -160,6 +139,46 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 		//now apply that crap to the camera transforms
 		//Vector3 newHeadPosition = new Vector3 (mHeadX, mHeadY, -mHeadDist);
+
+		if(Matrix){//only do this if the user chooses, for experimenting with getting the perspective correct
+		
+			HeadCam.ResetProjectionMatrix();
+			Matrix4x4 m = PerspectiveOffCenter (//original Lee values
+		                                    near*(-.5f * screenAspect + mHeadX)/(mHeadDist/1),//left,  
+		                                    near*(.5f * screenAspect + mHeadX)/(mHeadDist/1),//right
+		                                    near*(-.5f - mHeadY)/(mHeadDist/1),//bottom
+		                                    near*(.5f - mHeadY)/(mHeadDist/1),//top
+		                                    near,//near
+		                                    100//far
+		                                    
+		                                    /*//alternate real world values
+		                                    near*(-.5f * mScreenWidthInMM - mHeadX)/mHeadDist,//left,  
+		                                    near*(.5f * mScreenWidthInMM - mHeadX)/mHeadDist,//right
+		                                    near*(-.5f * mScreenHeightInMM - mHeadY)/mHeadDist,//bottom
+		                                    near*(.5f * mScreenHeightInMM - mHeadY)/mHeadDist,//top
+		                                    near,//near
+		                                    100//far  */
+		                                    );
+		
+			HeadCam.projectionMatrix = m;
+		}
+
+		switch(LookAtState){
+
+			case (LookAtMatrixSide.LH): {
+				HeadCam.worldToCameraMatrix = LookAtMatrixLH(new Vector3(mHeadX, mHeadY, -mHeadDist/10),new Vector3(mHeadX, mHeadY,0),new Vector3(0,1,0));
+				break;		
+			}
+			case(LookAtMatrixSide.RH): {
+				HeadCam.worldToCameraMatrix = LookAtMatrixRH(new Vector3(mHeadX, mHeadY, -mHeadDist/10),new Vector3(mHeadX, mHeadY,0),new Vector3(0,1,0));
+				break;		
+			}
+			case(LookAtMatrixSide.OFF): {
+				HeadCam.ResetWorldToCameraMatrix();
+				break;		
+			}
+		}
+
 		if(camMove){
 			HeadCam.transform.localPosition = new Vector3 (0, 0, -mHeadDist/2);
 		}
@@ -171,19 +190,6 @@ public class Z_wiiTrackLee : MonoBehaviour {
 			HeadCam.transform.LookAt (lookAtObject);
 		}
 
-
-		//the following is Johnny Lee's Projection Matrix
-		/*float nearPlane = .05f;
-		device.Transform.Projection = Matrix.PerspectiveOffCenterLH(
-			
-			nearPlane*(-.5f * screenAspect + headX)/headDist,//left 
-			nearPlane*(.5f * screenAspect + headX)/headDist,//right 
-			nearPlane*(-.5f - headY)/headDist,//bottom 
-			nearPlane*(.5f - headY)/headDist,//top
-			nearPlane,//near
-			100//far
-			
-			);*/
 
 	}
 
@@ -338,15 +344,15 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		return finalProjection;
 	}
 
-	static Matrix4x4 LookAtMatrix(
+	static Matrix4x4 LookAtMatrixRH(
 		Vector3 eye, Vector3 at,
 		Vector3 up)
 	{    
 		//unity's projection matrix original
 
-		Vector3 zaxis = eye - at;
-		Vector3 xaxis = (Vector3.Cross (up, zaxis));
-		Vector3 yaxis = (Vector3.Cross(zaxis,xaxis));
+		Vector3 zaxis = Vector3.Normalize (eye - at) ;
+		Vector3 xaxis = -Vector3.Normalize(Vector3.Cross (up, zaxis));
+		Vector3 yaxis = -Vector3.Cross(zaxis,xaxis);
 
 		
 		Matrix4x4 m = new Matrix4x4 ();
@@ -354,25 +360,64 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 		
 		m [0, 0] = xaxis.x;
-		m [0, 1] = yaxis.y;
-		m [0, 2] = zaxis.z;
-		m [0, 3] = -Vector3.Dot(xaxis, eye);
+		m [0, 1] = xaxis.y;
+		m [0, 2] = xaxis.z;
+		m [0, 3] = Vector3.Dot(xaxis, eye);
 
 				m [1,0] = yaxis.x;
 				m [1,1] = yaxis.y;
 				m [1, 2] = yaxis.z;
-				m [1, 3] = -Vector3.Dot(yaxis,eye);
+				m [1, 3] = -Vector3.Dot(yaxis, eye);
 
 						m [2, 0] = zaxis.x;
 						m [2, 1] = zaxis.y;
 						m [2, 2] = zaxis.z;
-						m [2, 3] = -Vector3.Dot(zaxis,eye);
+						m [2, 3] = -Vector3.Dot(zaxis, eye);
 
 										m[3,0] = 0;
 										m[3,1] = 0;
 										m[3,2] = 0;
 										m[3,3] = 1;
 										
+		
+		return m;
+		
+	}
+	static Matrix4x4 LookAtMatrixLH(
+		Vector3 eye, Vector3 at,
+		Vector3 up)
+	{    
+		//unity's projection matrix original
+		
+		Vector3 zaxis = Vector3.Normalize (eye - at) ;
+		Vector3 xaxis = Vector3.Normalize(Vector3.Cross (up, zaxis));
+		Vector3 yaxis = (Vector3.Cross(zaxis,xaxis));
+		
+		
+		Matrix4x4 m = new Matrix4x4 ();
+		
+		
+
+		m [0, 0] = xaxis.x;
+		m [0, 1] = yaxis.x;
+		m [0, 2] = zaxis.x;
+		m [0, 3] = 0;
+
+		m [1,0] = xaxis.y;
+		m [1,1] = yaxis.y;
+		m [1, 2] = zaxis.y;
+		m [1, 3] = 0;
+		
+		m [2, 0] = xaxis.z;
+		m [2, 1] = yaxis.z;
+		m [2, 2] = zaxis.z;
+		m [2, 3] = 0;
+		
+		m[3,0] = -Vector3.Dot(xaxis, eye);
+		m[3,1] = -Vector3.Dot(yaxis, eye);
+		m[3,2] = -Vector3.Dot(zaxis, eye);
+		m[3,3] = 1;
+		
 		
 		return m;
 		
