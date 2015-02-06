@@ -16,7 +16,9 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public float mScreenWidthInMM = 353.0f;                // height of your screen
 	// height of your screen
 	public bool mWiiMoteIsAboveScreen = true;                    // is the WiiMote mounted above or below the screen?
-	public float mWiiMoteVerticleAngle = 0;                    // vertical angle of your WiiMote (as radian) pointed straight forward for me.
+	public float mWiiMoteVerticleAngle = 0;// vertical angle of your WiiMote (as radian) pointed straight forward for me.
+	Matrix4x4 worldTransform = Matrix4x4.identity;
+
 
 	//vectors from the wii IR lights
 	public GameObject leftIR;
@@ -72,6 +74,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		leftIR.transform.position = new Vector3 (firstPoint.x/1024, firstPoint.y/768, 0);
 		rightIR.transform.position = new Vector3 (secondPoint.x/1024, secondPoint.y/768, 0);
 
+		//HeadCam.transform.worldToLocalMatrix = worldTransform;//experiment
 		TrackHead ();
 
 
@@ -105,7 +108,6 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 
 	public void TrackHead(){
-
 
 
 		//load points based on Raw IR Data Vector 2 Values
@@ -144,10 +146,10 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		
 			HeadCam.ResetProjectionMatrix();
 			Matrix4x4 m = PerspectiveOffCenter (//original Lee values
-		                                    near*(-.5f * screenAspect + mHeadX)/(mHeadDist/1),//left,  
-		                                    near*(.5f * screenAspect + mHeadX)/(mHeadDist/1),//right
-		                                    near*(-.5f - mHeadY)/(mHeadDist/1),//bottom
-		                                    near*(.5f - mHeadY)/(mHeadDist/1),//top
+		                                    near*(-.5f * screenAspect + mHeadX)/(mHeadDist),//left,  
+		                                    near*(.5f * screenAspect + mHeadX)/(mHeadDist),//right
+		                                    near*(-.5f - mHeadY)/(mHeadDist),//bottom
+		                                    near*(.5f - mHeadY)/(mHeadDist),//top
 		                                    near,//near
 		                                    100//far
 		                                    
@@ -166,11 +168,11 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		switch(LookAtState){
 
 			case (LookAtMatrixSide.LH): {
-				HeadCam.worldToCameraMatrix = LookAtMatrixLH(new Vector3(mHeadX, mHeadY, -mHeadDist/10),new Vector3(mHeadX, mHeadY,0),new Vector3(0,1,0));
+				HeadCam.worldToCameraMatrix = LookAtMatrixLH(new Vector3(mHeadX, mHeadY, -mHeadDist),new Vector3(mHeadX, mHeadY,0),new Vector3(0,1,0));
 				break;		
 			}
 			case(LookAtMatrixSide.RH): {
-				HeadCam.worldToCameraMatrix = LookAtMatrixRH(new Vector3(mHeadX, mHeadY, -mHeadDist/10),new Vector3(mHeadX, mHeadY,0),new Vector3(0,1,0));
+				HeadCam.worldToCameraMatrix = LookAtMatrixRH(new Vector3(mHeadX, mHeadY, -mHeadDist),new Vector3(mHeadX, mHeadY,0),new Vector3(0,1,0));
 				break;		
 			}
 			case(LookAtMatrixSide.OFF): {
@@ -180,7 +182,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		}
 
 		if(camMove){
-			HeadCam.transform.localPosition = new Vector3 (0, 0, -mHeadDist/2);
+			HeadCam.transform.localPosition = new Vector3 (0, 0, -mHeadDist);
 		}
 		//Vector3 lookAt = new Vector3(0 , 0 , -HeadCam.transform.position.z);//lookat point, currently being fakes      
 		//lookAtObject.localPosition = lookAt;
