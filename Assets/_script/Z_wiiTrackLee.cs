@@ -10,8 +10,8 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public float mHeadX = 0;                            // last calculated X position of the users head
 	public float mHeadY = 0;                            // last calculated Y position of the users head
 	public float mHeadDist = 0;                            // last calculated Z position of the users head
-	const float mRadiansPerPixel = (Mathf.PI / 4.0f) / 1024.0f;    // don't change this! it's a fixed value for the WiiMote infrared camera
-	public float mIRDotDistanceInMM = 240.5f;                // distance of the IR dots in mm. change it, if you are not using the original nintendo sensor bar//*this is set to the Lee shop glasses
+	const float mRadiansPerPixel = (float)(Mathf.PI / 4.0f) / 1024.0f;    // don't change this! it's a fixed value for the WiiMote infrared camera
+	public float mIRDotDistanceInMM = 180.5f;                // distance of the IR dots in mm. change it, if you are not using the original nintendo sensor bar//*this is set to the Lee shop glasses
 	public float mScreenHeightInMM = 353.0f;
 	public float mScreenWidthInMM = 353.0f;                // height of your screen
 	// height of your screen
@@ -40,11 +40,9 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public bool lookatswitch = true;
 	public bool FOV = false;
 	public bool Matrix = false;
-	public bool LookAtMatrixRHOn = false;
-	public bool LookAtMatrixLHOn = false;
-
 	public enum LookAtMatrixSide {RH,LH,OFF};
 	public LookAtMatrixSide LookAtState = LookAtMatrixSide.OFF;
+	//Cameras and lookats
 
 	public Camera HeadCam;
 	public float FOV1;
@@ -123,20 +121,21 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		float angle = mRadiansPerPixel * pointDist / 2;
 
 		//stuff I really don't understand that calculates where your head is
-		mHeadDist = (((((mIRDotDistanceInMM/2)/Mathf.Tan(angle))/mScreenHeightInMM)))-headdistoffset;
+		mHeadDist = (float)((((mIRDotDistanceInMM/2)/Mathf.Tan(angle))/mScreenHeightInMM))/	FOVMult;
+		;
 
 		float avgX = (firstPoint.x + secondPoint.x)/2.0f;
 		float avgY = (firstPoint.y + secondPoint.y)/2.0f;
 
-		mHeadX = (gmult*Mathf.Sin(mRadiansPerPixel * (avgX - 512)) * mHeadDist);
+		mHeadX = (Mathf.Sin(mRadiansPerPixel * (avgX - 512)) * mHeadDist);
 
 		float relativeVerticalAngle = (avgY - 384) * mRadiansPerPixel;
 
 		if(mWiiMoteIsAboveScreen){
-			mHeadY = .5f + (gmult*Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
+			mHeadY =  (Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
 
 		}else{
-			mHeadY = -.5f + (gmult*Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
+			mHeadY = -.5f + (Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
 		}
 
 		//now apply that crap to the camera transforms
