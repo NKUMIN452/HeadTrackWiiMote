@@ -13,7 +13,8 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	const float mRadiansPerPixel = (float)(Mathf.PI / 4.0f) / 1024.0f;    // don't change this! it's a fixed value for the WiiMote infrared camera
 	public float mIRDotDistanceInMM = 180.5f;                // distance of the IR dots in mm. change it, if you are not using the original nintendo sensor bar//*this is set to the Lee shop glasses
 	public float mScreenHeightInMM = 353.0f;
-	public float mScreenWidthInMM = 353.0f;                // height of your screen
+	public float mScreenWidthInMM = 353.0f;
+	// height of your screen
 	// height of your screen
 	public bool mWiiMoteIsAboveScreen = true;                    // is the WiiMote mounted above or below the screen?
 	public float mWiiMoteVerticleAngle = 0;// vertical angle of your WiiMote (as radian) pointed straight forward for me.
@@ -21,8 +22,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 
 	//vectors from the wii IR lights
-	public GameObject leftIR;
-	public GameObject rightIR;
+
 	public Transform bleft;
 	public Transform topleft;
 	public Transform bright;
@@ -34,6 +34,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public int pixel_width = 1680;
 	public int pixel_height = 1050;
 	private float screenAspect;
+
 	//switches for perspective stuff
 	public bool camMove = false;
 	public bool CAVE = false;
@@ -42,20 +43,18 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	public bool Matrix = false;
 	public enum LookAtMatrixSide {RH,LH,OFF};
 	public LookAtMatrixSide LookAtState = LookAtMatrixSide.OFF;
-	//Cameras and lookats
 
+	//Cameras and lookats
 	public Camera HeadCam;
 	public float FOV1;
 	public float FOVMult=1;
 	public Transform lookAtObject;
-	public float left = -0.2F;
-	public float right = 0.2F;
-	public float top = 0.2F;
-	public float bottom = -0.2F;
+	float left = -0.2F;
+	float right = 0.2F;
+	float top = 0.2F;
+	float bottom = -0.2F;
 	public float near = .05f;
 	public float far = 100;
-	public float gmult = 1.0f;
-	public float headdistoffset = 1;
 
 	// Use this for initialization
 	void Start () {
@@ -68,16 +67,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 	// Update is called once per frame
 	void LateUpdate () {
 
-
-		leftIR.transform.position = new Vector3 (firstPoint.x/1024, firstPoint.y/768, 0);
-		rightIR.transform.position = new Vector3 (secondPoint.x/1024, secondPoint.y/768, 0);
-
-		//HeadCam.transform.worldToLocalMatrix = worldTransform;//experiment
 		TrackHead ();
-
-
-
-
 		if(CAVE){
 
 			Vector3 BottomLeftCorner = bleft.transform.position;
@@ -95,13 +85,8 @@ public class Z_wiiTrackLee : MonoBehaviour {
 				);
 
 			HeadCam.projectionMatrix = genProjection;  
-
 		}
 
-
-
-
-	
 	}
 
 
@@ -109,11 +94,18 @@ public class Z_wiiTrackLee : MonoBehaviour {
 
 
 		//load points based on Raw IR Data Vector 2 Values
-		firstPoint.x = (Wii.GetRawIRData (0) [1].x) * 1024;
-		firstPoint.y = (Wii.GetRawIRData (0) [1].y) * 768;
-		secondPoint.x = (Wii.GetRawIRData (0) [0].x) * 1024;
-		secondPoint.y = (Wii.GetRawIRData (0) [0].y) * 768;
-
+		firstPoint.x = Mathf.Abs(
+			((Wii.GetRawIRData (0) [0].x) * 1024)-1024
+			);
+		firstPoint.y = Mathf.Abs(
+			((Wii.GetRawIRData (0) [0].y) * 768)-768
+			);
+		secondPoint.x = Mathf.Abs(
+			((Wii.GetRawIRData (0) [1].x) * 1024)-1024
+			);
+		secondPoint.y = Mathf.Abs(
+			((Wii.GetRawIRData (0) [1].y) * 768)-768
+			);
 
 		float dx = firstPoint.x - secondPoint.x;
 		float dy = firstPoint.y - secondPoint.y;
@@ -132,7 +124,7 @@ public class Z_wiiTrackLee : MonoBehaviour {
 		float relativeVerticalAngle = (avgY - 384) * mRadiansPerPixel;
 
 		if(mWiiMoteIsAboveScreen){
-			mHeadY =  (Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
+			mHeadY =  .5f + (Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
 
 		}else{
 			mHeadY = -.5f + (Mathf.Sin(relativeVerticalAngle + mWiiMoteVerticleAngle) * mHeadDist);
