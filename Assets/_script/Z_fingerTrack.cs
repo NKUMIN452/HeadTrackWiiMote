@@ -25,8 +25,8 @@ public class Z_fingerTrack : MonoBehaviour {
 
 		Wii.GetMotionPlus (1);
 		Wii.CheckForMotionPlus(1);
-		shooterOffset = new Vector3 (this.transform.position.x - .35f, this.transform.position.y, this.transform.position.z);
-		fingerTrans.localPosition = new Vector3 (Wii.GetNunchuckAnalogStick (0).x, Wii.GetNunchuckAnalogStick (0).y, fingerTrans.localPosition.z);
+		//shooterOffset = new Vector3 (this.transform.position.x - .35f, this.transform.position.y, this.transform.position.z);
+		//fingerTrans.localPosition = new Vector3 (Wii.GetNunchuckAnalogStick (0).x, Wii.GetNunchuckAnalogStick (0).y, fingerTrans.localPosition.z);
 		lSaber ();
 	
 	}
